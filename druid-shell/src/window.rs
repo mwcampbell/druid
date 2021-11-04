@@ -410,6 +410,14 @@ impl WindowHandle {
     pub fn get_scale(&self) -> Result<Scale, Error> {
         self.0.get_scale().map_err(Into::into)
     }
+
+    pub fn init_accesskit(&self, initial_state: accesskit_schema::TreeUpdate) {
+        self.0.init_accesskit(initial_state)
+    }
+
+    pub fn update_accesskit(&self, update: accesskit_schema::TreeUpdate) {
+        self.0.update_accesskit(update)
+    }
 }
 
 #[cfg(feature = "raw-win-handle")]

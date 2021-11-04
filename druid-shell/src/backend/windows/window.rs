@@ -237,6 +237,7 @@ struct WindowState {
     // Is the window focusable ("activatable" in Win32 terminology)?
     // False for tooltips, to prevent stealing focus from owner window.
     is_focusable: bool,
+    accesskit: RefCell<Option<accesskit_windows::Manager>>,
 }
 
 impl std::fmt::Debug for WindowState {
@@ -1266,6 +1267,19 @@ impl WndProc for MyWndProc {
                     }
                 })
                 .map(|_| 0),
+            WM_GETOBJECT => self
+                .handle
+                .borrow()
+                .state
+                .upgrade()
+                .map(|state| {
+                    state.accesskit.borrow().as_ref().map(|manager| {
+                        let wparam = windows::Win32::Foundation::WPARAM(wparam);
+                        let lparam = windows::Win32::Foundation::LPARAM(lparam);
+                        manager.handle_wm_getobject(wparam, lparam).0
+                    })
+                })
+                .flatten(),
             _ => None,
         }
     }
@@ -1440,6 +1454,7 @@ impl WindowBuilder {
                 handle_titlebar: Cell::new(false),
                 active_text_input: Cell::new(None),
                 is_focusable: focusable,
+                accesskit: RefCell::new(None),
             };
             let win = Rc::new(window);
             let handle = WindowHandle {
@@ -2224,6 +2239,19 @@ impl WindowHandle {
     fn free_timer_slot(&self, token: TimerToken) {
         if let Some(w) = self.state.upgrade() {
             w.timers.lock().unwrap().free(token)
+        }
+    }
+
+    pub fn init_accesskit(&self, initial_state: accesskit_schema::TreeUpdate) {
+        if let Some(w) = self.state.upgrade() {
+            let hwnd = windows::Win32::Foundation::HWND(w.hwnd.get() as _);
+            *w.accesskit.borrow_mut() = Some(accesskit_windows::Manager::new(hwnd, initial_state));
+        }
+    }
+
+    pub fn update_accesskit(&self, update: accesskit_schema::TreeUpdate) {
+        if let Some(w) = self.state.upgrade() {
+            w.accesskit.borrow().as_ref().unwrap().update(update);
         }
     }
 }
