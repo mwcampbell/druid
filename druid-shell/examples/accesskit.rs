@@ -19,7 +19,7 @@ use accesskit_schema::{Node, NodeId, Role, StringEncoding, Tree, TreeId, TreeUpd
 use druid_shell::kurbo::Size;
 use druid_shell::piet::{Color, RenderContext};
 
-use druid_shell::{Application, KeyEvent, Region, WinHandler, WindowBuilder, WindowHandle};
+use druid_shell::{Application, KeyEvent, KbKey, Region, WinHandler, WindowBuilder, WindowHandle};
 
 #[cfg(target_os = "windows")]
 use windows::Win32::System::Com::*;
@@ -103,7 +103,33 @@ impl WinHandler for HelloState {
     }
 
     fn key_down(&mut self, event: KeyEvent) -> bool {
-        println!("keydown: {:?}", event);
+        if event.key == KbKey::Tab {
+            self.focus = if self.focus == BUTTON_1_ID {
+                BUTTON_2_ID
+            } else {
+                BUTTON_1_ID
+            };
+            self.update_focus(true);
+            return true;
+        }
+        if event.key == KbKey::Enter || event.key == KbKey::Character(" ".into()) {
+            // This is a pretty hacky way of updating a node.
+            // A real GUI framework would have a consistent way
+            // of building a node from underlying data.
+            let node = if self.focus == BUTTON_1_ID {
+                make_button(BUTTON_1_ID, "You pressed button 1")
+            } else {
+                make_button(BUTTON_2_ID, "You pressed button 2")
+            };
+            let update = TreeUpdate {
+                clear: None,
+                nodes: vec![node],
+                tree: None,
+                focus: Some(self.focus),
+            };
+            self.handle.update_accesskit(update);
+            return true;
+        }
         false
     }
 
