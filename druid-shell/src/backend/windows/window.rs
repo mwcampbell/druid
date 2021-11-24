@@ -1273,11 +1273,18 @@ impl WndProc for MyWndProc {
                 .state
                 .upgrade()
                 .map(|state| {
-                    state.accesskit.borrow().as_ref().map(|manager| {
-                        let wparam = windows::Win32::Foundation::WPARAM(wparam);
-                        let lparam = windows::Win32::Foundation::LPARAM(lparam);
-                        manager.handle_wm_getobject(wparam, lparam).0
-                    })
+                    state
+                        .accesskit
+                        .borrow()
+                        .as_ref()
+                        .map(|manager| {
+                            let wparam = windows::Win32::Foundation::WPARAM(wparam);
+                            let lparam = windows::Win32::Foundation::LPARAM(lparam);
+                            manager
+                                .handle_wm_getobject(wparam, lparam)
+                                .map(|result| result.0)
+                        })
+                        .flatten()
                 })
                 .flatten(),
             _ => None,

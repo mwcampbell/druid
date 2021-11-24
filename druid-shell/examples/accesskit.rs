@@ -19,10 +19,7 @@ use accesskit_schema::{Node, NodeId, Role, StringEncoding, Tree, TreeId, TreeUpd
 use druid_shell::kurbo::Size;
 use druid_shell::piet::{Color, RenderContext};
 
-use druid_shell::{Application, KeyEvent, KbKey, Region, WinHandler, WindowBuilder, WindowHandle};
-
-#[cfg(target_os = "windows")]
-use windows::Win32::System::Com::*;
+use druid_shell::{Application, KbKey, KeyEvent, Region, WinHandler, WindowBuilder, WindowHandle};
 
 const BG_COLOR: Color = Color::rgb8(0x27, 0x28, 0x22);
 
@@ -159,10 +156,6 @@ impl WinHandler for HelloState {
 }
 
 fn main() {
-    // Workaround for AccessKit/accesskit#37
-    #[cfg(target_os = "windows")]
-    unsafe { CoInitializeEx(std::ptr::null_mut(), COINIT_MULTITHREADED) }.unwrap();
-
     tracing_subscriber::fmt().init();
 
     let app = Application::new().unwrap();
