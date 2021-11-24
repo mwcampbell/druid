@@ -1263,14 +1263,6 @@ impl WindowHandle {
             state.window.set_title(&(title.into()));
         }
     }
-
-    pub fn init_accesskit(&self, _initial_state: accesskit_schema::TreeUpdate) {
-        // TODO
-    }
-
-    pub fn update_accesskit(&self, _update: accesskit_schema::TreeUpdate) {
-        // TODO
-    }
 }
 
 // WindowState needs to be Send + Sync so it can be passed into glib closures.

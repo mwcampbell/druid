@@ -1409,14 +1409,6 @@ impl WindowHandle {
         // TODO: Get actual Scale
         Ok(Scale::new(1.0, 1.0))
     }
-
-    pub fn init_accesskit(&self, _initial_state: accesskit_schema::TreeUpdate) {
-        // TODO
-    }
-
-    pub fn update_accesskit(&self, _update: accesskit_schema::TreeUpdate) {
-        // TODO
-    }
 }
 
 #[cfg(feature = "raw-win-handle")]
