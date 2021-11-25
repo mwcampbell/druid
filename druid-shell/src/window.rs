@@ -526,11 +526,11 @@ impl WindowBuilder {
         self.0.build().map(WindowHandle).map_err(Into::into)
     }
 
-    pub fn set_accesskit_tree_initializer(
+    pub fn set_accesskit_factory(
         &mut self,
-        init: Box<dyn FnOnce() -> accesskit_schema::TreeUpdate>,
+        factory: Box<dyn FnOnce() -> accesskit_schema::TreeUpdate>,
     ) {
-        self.0.set_accesskit_tree_initializer(init)
+        self.0.set_accesskit_factory(factory)
     }
 }
 

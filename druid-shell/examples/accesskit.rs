@@ -178,7 +178,7 @@ fn main() {
     let mut builder = WindowBuilder::new(app.clone());
     let state = HelloState::new();
     builder.set_handler(Box::new(HelloHandler::new(Rc::clone(&state))));
-    builder.set_accesskit_tree_initializer(Box::new(move || state.borrow().get_initial_tree()));
+    builder.set_accesskit_factory(Box::new(move || state.borrow().get_initial_tree()));
     builder.set_title(WINDOW_TITLE);
 
     let window = builder.build().unwrap();

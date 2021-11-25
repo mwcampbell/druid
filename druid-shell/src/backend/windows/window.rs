@@ -99,7 +99,7 @@ pub(crate) struct WindowBuilder {
     position: Option<Point>,
     level: Option<WindowLevel>,
     state: window::WindowState,
-    accesskit_init: Option<Box<dyn FnOnce() -> accesskit_schema::TreeUpdate>>,
+    accesskit_factory: Option<Box<dyn FnOnce() -> accesskit_schema::TreeUpdate>>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -1309,7 +1309,7 @@ impl WindowBuilder {
             position: None,
             level: None,
             state: window::WindowState::Restored,
-            accesskit_init: None,
+            accesskit_factory: None,
         }
     }
 
@@ -1372,11 +1372,11 @@ impl WindowBuilder {
         }
     }
 
-    pub fn set_accesskit_tree_initializer(
+    pub fn set_accesskit_factory(
         &mut self,
-        init: Box<dyn FnOnce() -> accesskit_schema::TreeUpdate>,
+        factory: Box<dyn FnOnce() -> accesskit_schema::TreeUpdate>,
     ) {
-        self.accesskit_init = Some(init);
+        self.accesskit_factory = Some(factory);
     }
 
     pub fn build(self) -> Result<WindowHandle, Error> {
@@ -1555,7 +1555,7 @@ impl WindowBuilder {
                 register_accel(hwnd, &accels);
             }
 
-            if let Some(init) = self.accesskit_init {
+            if let Some(factory) = self.accesskit_factory {
                 // Initialize accessibility as late as possible without allowing
                 // a user-observable state where the window has no accessibility
                 // tree. This lets us fully initialize the window size,
@@ -1564,7 +1564,7 @@ impl WindowBuilder {
                 // but it seems that in practice, ATs don't actually do this
                 // until the window is shown.
                 let hwnd = windows::Win32::Foundation::HWND(hwnd as _);
-                *win.accesskit.borrow_mut() = Some(accesskit_windows::Manager::new(hwnd, init));
+                *win.accesskit.borrow_mut() = Some(accesskit_windows::Manager::new(hwnd, factory));
             }
             Ok(handle)
         }
