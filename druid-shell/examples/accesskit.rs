@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{any::Any, num::NonZeroU64};
+use std::{any::Any, cell::RefCell, mem::drop, num::NonZeroU64, rc::Rc};
 
 use accesskit_schema::{Node, NodeId, Role, StringEncoding, Tree, TreeId, TreeUpdate};
 
@@ -38,74 +38,88 @@ fn make_button(id: NodeId, name: &str) -> Node {
     }
 }
 
-fn get_initial_state() -> TreeUpdate {
-    let root = Node {
-        children: Box::new([BUTTON_1_ID, BUTTON_2_ID]),
-        name: Some(WINDOW_TITLE.into()),
-        ..Node::new(WINDOW_ID, Role::Window)
-    };
-    let button_1 = make_button(BUTTON_1_ID, "Button 1");
-    let button_2 = make_button(BUTTON_2_ID, "Button 2");
-    TreeUpdate {
-        clear: None,
-        nodes: vec![root, button_1, button_2],
-        tree: Some(Tree::new(
-            TreeId("test".into()),
-            WINDOW_ID,
-            StringEncoding::Utf8,
-        )),
-        focus: None,
-    }
-}
-
 struct HelloState {
     size: Size,
-    handle: WindowHandle,
     focus: NodeId,
+    is_window_focused: bool,
 }
 
 impl HelloState {
-    fn update_focus(&self, is_window_focused: bool) {
-        let update = TreeUpdate {
-            clear: None,
-            nodes: vec![],
-            tree: None,
-            focus: is_window_focused.then(|| self.focus),
-        };
-        self.handle.update_accesskit(update);
-    }
-}
-
-impl Default for HelloState {
-    fn default() -> Self {
-        Self {
+    fn new() -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Self {
             size: Default::default(),
-            handle: Default::default(),
             focus: INITIAL_FOCUS,
+            is_window_focused: false,
+        }))
+    }
+
+    fn get_initial_tree(&self) -> TreeUpdate {
+        let root = Node {
+            children: Box::new([BUTTON_1_ID, BUTTON_2_ID]),
+            name: Some(WINDOW_TITLE.into()),
+            ..Node::new(WINDOW_ID, Role::Window)
+        };
+        let button_1 = make_button(BUTTON_1_ID, "Button 1");
+        let button_2 = make_button(BUTTON_2_ID, "Button 2");
+        TreeUpdate {
+            clear: None,
+            nodes: vec![root, button_1, button_2],
+            tree: Some(Tree::new(
+                TreeId("test".into()),
+                WINDOW_ID,
+                StringEncoding::Utf8,
+            )),
+            focus: self.is_window_focused.then(|| self.focus),
         }
     }
 }
 
-impl WinHandler for HelloState {
+struct HelloHandler {
+    state: Rc<RefCell<HelloState>>,
+    handle: WindowHandle,
+}
+
+impl HelloHandler {
+    fn new(state: Rc<RefCell<HelloState>>) -> Self {
+        Self {
+            state,
+            handle: WindowHandle::default(),
+        }
+    }
+
+    fn update_focus(&self, is_window_focused: bool) {
+        let mut state = self.state.borrow_mut();
+        state.is_window_focused = is_window_focused;
+        self.handle.update_accesskit_if_active(|| TreeUpdate {
+            clear: None,
+            nodes: vec![],
+            tree: None,
+            focus: is_window_focused.then(|| state.focus),
+        });
+    }
+}
+
+impl WinHandler for HelloHandler {
     fn connect(&mut self, handle: &WindowHandle) {
         self.handle = handle.clone();
-        self.handle.init_accesskit(get_initial_state());
     }
 
     fn prepare_paint(&mut self) {}
 
     fn paint(&mut self, piet: &mut piet_common::Piet, _: &Region) {
-        let rect = self.size.to_rect();
+        let rect = self.state.borrow().size.to_rect();
         piet.fill(rect, &BG_COLOR);
     }
 
     fn key_down(&mut self, event: KeyEvent) -> bool {
         if event.key == KbKey::Tab {
-            self.focus = if self.focus == BUTTON_1_ID {
+            let mut state = self.state.borrow_mut();
+            state.focus = if state.focus == BUTTON_1_ID {
                 BUTTON_2_ID
             } else {
                 BUTTON_1_ID
             };
+            drop(state);
             self.update_focus(true);
             return true;
         }
@@ -113,7 +127,8 @@ impl WinHandler for HelloState {
             // This is a pretty hacky way of updating a node.
             // A real GUI framework would have a consistent way
             // of building a node from underlying data.
-            let node = if self.focus == BUTTON_1_ID {
+            let focus = self.state.borrow().focus;
+            let node = if focus == BUTTON_1_ID {
                 make_button(BUTTON_1_ID, "You pressed button 1")
             } else {
                 make_button(BUTTON_2_ID, "You pressed button 2")
@@ -122,7 +137,7 @@ impl WinHandler for HelloState {
                 clear: None,
                 nodes: vec![node],
                 tree: None,
-                focus: Some(self.focus),
+                focus: Some(focus),
             };
             self.handle.update_accesskit(update);
             return true;
@@ -131,7 +146,8 @@ impl WinHandler for HelloState {
     }
 
     fn size(&mut self, size: Size) {
-        self.size = size;
+        let mut state = self.state.borrow_mut();
+        state.size = size;
     }
 
     fn got_focus(&mut self) {
@@ -160,7 +176,9 @@ fn main() {
 
     let app = Application::new().unwrap();
     let mut builder = WindowBuilder::new(app.clone());
-    builder.set_handler(Box::new(HelloState::default()));
+    let state = HelloState::new();
+    builder.set_handler(Box::new(HelloHandler::new(Rc::clone(&state))));
+    builder.set_accesskit_tree_initializer(Box::new(move || state.borrow().get_initial_tree()));
     builder.set_title(WINDOW_TITLE);
 
     let window = builder.build().unwrap();

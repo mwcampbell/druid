@@ -58,6 +58,7 @@ raw-window-handle = { version = "0.3.3", optional = true, default_features = fal
 
 [dependencies.accesskit_schema]
 git = "https://github.com/AccessKit/accesskit"
+branch = "lazy-init-boxed-closure"
 
 [target.'cfg(target_os="windows")'.dependencies]
 scopeguard = "1.1.0"
@@ -65,6 +66,7 @@ wio = "0.2.2"
 
 [target.'cfg(target_os="windows")'.dependencies.accesskit_windows]
 git = "https://github.com/AccessKit/accesskit"
+branch = "lazy-init-boxed-closure"
 
 [target.'cfg(target_os="windows")'.dependencies.winapi]
 version = "0.3.9"

@@ -411,12 +411,15 @@ impl WindowHandle {
         self.0.get_scale().map_err(Into::into)
     }
 
-    pub fn init_accesskit(&self, initial_state: accesskit_schema::TreeUpdate) {
-        self.0.init_accesskit(initial_state)
-    }
-
     pub fn update_accesskit(&self, update: accesskit_schema::TreeUpdate) {
         self.0.update_accesskit(update)
+    }
+
+    pub fn update_accesskit_if_active(
+        &self,
+        updater: impl FnOnce() -> accesskit_schema::TreeUpdate,
+    ) {
+        self.0.update_accesskit_if_active(updater)
     }
 }
 
@@ -521,6 +524,13 @@ impl WindowBuilder {
     /// If this fails, your application should exit.
     pub fn build(self) -> Result<WindowHandle, Error> {
         self.0.build().map(WindowHandle).map_err(Into::into)
+    }
+
+    pub fn set_accesskit_tree_initializer(
+        &mut self,
+        init: Box<dyn FnOnce() -> accesskit_schema::TreeUpdate>,
+    ) {
+        self.0.set_accesskit_tree_initializer(init)
     }
 }
 

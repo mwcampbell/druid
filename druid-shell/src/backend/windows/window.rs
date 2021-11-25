@@ -99,6 +99,7 @@ pub(crate) struct WindowBuilder {
     position: Option<Point>,
     level: Option<WindowLevel>,
     state: window::WindowState,
+    accesskit_init: Option<Box<dyn FnOnce() -> accesskit_schema::TreeUpdate>>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -1308,6 +1309,7 @@ impl WindowBuilder {
             position: None,
             level: None,
             state: window::WindowState::Restored,
+            accesskit_init: None,
         }
     }
 
@@ -1368,6 +1370,13 @@ impl WindowBuilder {
                 warn!("WindowLevel::Modal and WindowLevel::DropDown is currently unimplemented for Windows backend.");
             }
         }
+    }
+
+    pub fn set_accesskit_tree_initializer(
+        &mut self,
+        init: Box<dyn FnOnce() -> accesskit_schema::TreeUpdate>,
+    ) {
+        self.accesskit_init = Some(init);
     }
 
     pub fn build(self) -> Result<WindowHandle, Error> {
@@ -1513,7 +1522,7 @@ impl WindowBuilder {
                 0 as HWND,
                 hmenu,
                 0 as HINSTANCE,
-                win,
+                Rc::clone(&win),
             );
             if hwnd.is_null() {
                 return Err(Error::NullHwnd);
@@ -1544,6 +1553,18 @@ impl WindowBuilder {
 
             if let Some(accels) = accels {
                 register_accel(hwnd, &accels);
+            }
+
+            if let Some(init) = self.accesskit_init {
+                // Initialize accessibility as late as possible without allowing
+                // a user-observable state where the window has no accessibility
+                // tree. This lets us fully initialize the window size,
+                // and possibly other things, first. In theory, an AT could
+                // request an accessibility tree as soon as the window is created,
+                // but it seems that in practice, ATs don't actually do this
+                // until the window is shown.
+                let hwnd = windows::Win32::Foundation::HWND(hwnd as _);
+                *win.accesskit.borrow_mut() = Some(accesskit_windows::Manager::new(hwnd, init));
             }
             Ok(handle)
         }
@@ -2249,16 +2270,22 @@ impl WindowHandle {
         }
     }
 
-    pub fn init_accesskit(&self, initial_state: accesskit_schema::TreeUpdate) {
-        if let Some(w) = self.state.upgrade() {
-            let hwnd = windows::Win32::Foundation::HWND(w.hwnd.get() as _);
-            *w.accesskit.borrow_mut() = Some(accesskit_windows::Manager::new(hwnd, initial_state));
-        }
-    }
-
     pub fn update_accesskit(&self, update: accesskit_schema::TreeUpdate) {
         if let Some(w) = self.state.upgrade() {
             w.accesskit.borrow().as_ref().unwrap().update(update);
+        }
+    }
+
+    pub fn update_accesskit_if_active(
+        &self,
+        updater: impl FnOnce() -> accesskit_schema::TreeUpdate,
+    ) {
+        if let Some(w) = self.state.upgrade() {
+            w.accesskit
+                .borrow()
+                .as_ref()
+                .unwrap()
+                .update_if_active(updater);
         }
     }
 }
