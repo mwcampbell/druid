@@ -1281,13 +1281,12 @@ impl WndProc for MyWndProc {
                         .map(|manager| {
                             let wparam = windows::Win32::Foundation::WPARAM(wparam);
                             let lparam = windows::Win32::Foundation::LPARAM(lparam);
-                            manager
-                                .handle_wm_getobject(wparam, lparam)
-                                .map(|result| result.0)
+                            manager.handle_wm_getobject(wparam, lparam)
                         })
                         .flatten()
                 })
-                .flatten(),
+                .flatten()
+                .map(|result| result.into().0),
             _ => None,
         }
     }
@@ -2278,7 +2277,8 @@ impl WindowHandle {
 
     pub fn update_accesskit(&self, update: accesskit_schema::TreeUpdate) {
         if let Some(w) = self.state.upgrade() {
-            w.accesskit.borrow().as_ref().unwrap().update(update);
+            let events = w.accesskit.borrow().as_ref().unwrap().update(update);
+            events.raise();
         }
     }
 
@@ -2287,11 +2287,13 @@ impl WindowHandle {
         updater: impl FnOnce() -> accesskit_schema::TreeUpdate,
     ) {
         if let Some(w) = self.state.upgrade() {
-            w.accesskit
+            let events = w
+                .accesskit
                 .borrow()
                 .as_ref()
                 .unwrap()
                 .update_if_active(updater);
+            events.raise();
         }
     }
 }
