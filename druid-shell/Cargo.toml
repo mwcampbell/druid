@@ -56,7 +56,7 @@ keyboard-types = { version = "0.6.2", default_features = false }
 image = { version = "0.23.12", optional = true, default_features = false }
 raw-window-handle = { version = "0.3.3", optional = true, default_features = false }
 
-[dependencies.accesskit_schema]
+[dependencies.accesskit]
 git = "https://github.com/AccessKit/accesskit"
 
 [target.'cfg(target_os="windows")'.dependencies]

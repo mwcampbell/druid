@@ -99,7 +99,7 @@ pub(crate) struct WindowBuilder {
     position: Option<Point>,
     level: Option<WindowLevel>,
     state: window::WindowState,
-    accesskit_factory: Option<Box<dyn FnOnce() -> accesskit_schema::TreeUpdate>>,
+    accesskit_factory: Option<Box<dyn FnOnce() -> accesskit::TreeUpdate>>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -238,7 +238,7 @@ struct WindowState {
     // Is the window focusable ("activatable" in Win32 terminology)?
     // False for tooltips, to prevent stealing focus from owner window.
     is_focusable: bool,
-    accesskit: RefCell<Option<accesskit_windows::Manager>>,
+    accesskit: RefCell<Option<accesskit_windows::Adapter>>,
 }
 
 impl std::fmt::Debug for WindowState {
@@ -1278,10 +1278,10 @@ impl WndProc for MyWndProc {
                         .accesskit
                         .borrow()
                         .as_ref()
-                        .map(|manager| {
+                        .map(|adapter| {
                             let wparam = windows::Win32::Foundation::WPARAM(wparam);
                             let lparam = windows::Win32::Foundation::LPARAM(lparam);
-                            manager.handle_wm_getobject(wparam, lparam)
+                            adapter.handle_wm_getobject(wparam, lparam)
                         })
                         .flatten()
                 })
@@ -1371,10 +1371,7 @@ impl WindowBuilder {
         }
     }
 
-    pub fn set_accesskit_factory(
-        &mut self,
-        factory: Box<dyn FnOnce() -> accesskit_schema::TreeUpdate>,
-    ) {
+    pub fn set_accesskit_factory(&mut self, factory: Box<dyn FnOnce() -> accesskit::TreeUpdate>) {
         self.accesskit_factory = Some(factory);
     }
 
@@ -1569,7 +1566,7 @@ impl WindowBuilder {
                 // shown, and druid-shell windows are always initially invisible.
                 // So it's safe to initialize AccessKit here.
                 let hwnd = windows::Win32::Foundation::HWND(hwnd as _);
-                *win.accesskit.borrow_mut() = Some(accesskit_windows::Manager::new(hwnd, factory));
+                *win.accesskit.borrow_mut() = Some(accesskit_windows::Adapter::new(hwnd, factory));
             }
             Ok(handle)
         }
@@ -2275,17 +2272,14 @@ impl WindowHandle {
         }
     }
 
-    pub fn update_accesskit(&self, update: accesskit_schema::TreeUpdate) {
+    pub fn update_accesskit(&self, update: accesskit::TreeUpdate) {
         if let Some(w) = self.state.upgrade() {
             let events = w.accesskit.borrow().as_ref().unwrap().update(update);
             events.raise();
         }
     }
 
-    pub fn update_accesskit_if_active(
-        &self,
-        updater: impl FnOnce() -> accesskit_schema::TreeUpdate,
-    ) {
+    pub fn update_accesskit_if_active(&self, updater: impl FnOnce() -> accesskit::TreeUpdate) {
         if let Some(w) = self.state.upgrade() {
             let events = w
                 .accesskit

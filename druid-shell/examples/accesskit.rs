@@ -14,7 +14,7 @@
 
 use std::{any::Any, cell::RefCell, mem::drop, num::NonZeroU64, rc::Rc};
 
-use accesskit_schema::{Node, NodeId, Role, StringEncoding, Tree, TreeId, TreeUpdate};
+use accesskit::{Node, NodeId, Role, StringEncoding, Tree, TreeId, TreeUpdate};
 
 use druid_shell::kurbo::Size;
 use druid_shell::piet::{Color, RenderContext};
