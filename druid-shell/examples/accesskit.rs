@@ -14,7 +14,9 @@
 
 use std::{any::Any, cell::RefCell, mem::drop, num::NonZeroU64, rc::Rc};
 
-use accesskit::{Node, NodeId, Role, StringEncoding, Tree, TreeId, TreeUpdate};
+use accesskit::{
+    Action, ActionRequest, Node, NodeId, Role, StringEncoding, Tree, TreeId, TreeUpdate,
+};
 
 use druid_shell::kurbo::Size;
 use druid_shell::piet::{Color, RenderContext};
@@ -55,7 +57,7 @@ impl HelloState {
 
     fn get_initial_tree(&self) -> TreeUpdate {
         let root = Node {
-            children: Box::new([BUTTON_1_ID, BUTTON_2_ID]),
+            children: vec![BUTTON_1_ID, BUTTON_2_ID],
             name: Some(WINDOW_TITLE.into()),
             ..Node::new(WINDOW_ID, Role::Window)
         };
@@ -156,6 +158,23 @@ impl WinHandler for HelloHandler {
 
     fn lost_focus(&mut self) {
         self.update_focus(false);
+    }
+
+    fn accesskit_action(&mut self, request: ActionRequest) {
+        if let ActionRequest {
+            action: Action::Focus,
+            target,
+            data: None,
+        } = request
+        {
+            if target == BUTTON_1_ID || target == BUTTON_2_ID {
+                let mut state = self.state.borrow_mut();
+                state.focus = target;
+                let is_window_focused = state.is_window_focused;
+                drop(state);
+                self.update_focus(is_window_focused);
+            }
+        }
     }
 
     fn request_close(&mut self) {

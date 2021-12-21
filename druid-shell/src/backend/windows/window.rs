@@ -215,6 +215,7 @@ pub struct IdleHandle {
 enum IdleKind {
     Callback(Box<dyn IdleCallback>),
     Token(IdleToken),
+    AccessKitAction(accesskit::ActionRequest),
 }
 
 /// This is the low level window state. All mutable contents are protected
@@ -1264,6 +1265,9 @@ impl WndProc for MyWndProc {
                         match callback {
                             IdleKind::Callback(it) => it.call(&mut *s.handler),
                             IdleKind::Token(token) => s.handler.idle(token),
+                            IdleKind::AccessKitAction(request) => {
+                                s.handler.accesskit_action(request)
+                            }
                         }
                     }
                 })
@@ -1565,8 +1569,16 @@ impl WindowBuilder {
                 // send their first WM_GETOBJECT message until the window is
                 // shown, and druid-shell windows are always initially invisible.
                 // So it's safe to initialize AccessKit here.
+                let action_handler = Box::new(AccessKitActionHandler {
+                    hwnd,
+                    queue: win.idle_queue.clone(),
+                });
                 let hwnd = windows::Win32::Foundation::HWND(hwnd as _);
-                *win.accesskit.borrow_mut() = Some(accesskit_windows::Adapter::new(hwnd, factory));
+                *win.accesskit.borrow_mut() = Some(accesskit_windows::Adapter::new(
+                    hwnd,
+                    factory,
+                    action_handler,
+                ));
             }
             Ok(handle)
         }
@@ -2320,6 +2332,26 @@ impl IdleHandle {
             }
         }
         queue.push(IdleKind::Token(token));
+    }
+}
+
+struct AccessKitActionHandler {
+    hwnd: HWND,
+    queue: Arc<Mutex<Vec<IdleKind>>>,
+}
+
+unsafe impl Send for AccessKitActionHandler {}
+unsafe impl Sync for AccessKitActionHandler {}
+
+impl accesskit::ActionHandler for AccessKitActionHandler {
+    fn do_action(&self, request: accesskit::ActionRequest) {
+        let mut queue = self.queue.lock().unwrap();
+        if queue.is_empty() {
+            unsafe {
+                PostMessageW(self.hwnd, DS_RUN_IDLE, 0, 0);
+            }
+        }
+        queue.push(IdleKind::AccessKitAction(request));
     }
 }
 

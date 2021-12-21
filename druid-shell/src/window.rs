@@ -698,6 +698,9 @@ pub trait WinHandler {
     #[allow(unused_variables)]
     fn idle(&mut self, token: IdleToken) {}
 
+    #[allow(unused_variables)]
+    fn accesskit_action(&mut self, request: accesskit::ActionRequest) {}
+
     /// Get a reference to the handler state. Used mostly by idle handlers.
     fn as_any(&mut self) -> &mut dyn Any;
 }
