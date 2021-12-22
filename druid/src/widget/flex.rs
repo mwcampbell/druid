@@ -878,6 +878,18 @@ impl<T: Data> Widget<T> for Flex<T> {
         }
     }
 
+    #[instrument(name = "Flex", level = "trace", skip(self, ctx, data, env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::GenericContainer;
+            node.ignored = true;
+        });
+
+        for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
+            child.accessibility(ctx, data, env);
+        }
+    }
+
     fn debug_state(&self, data: &T) -> DebugState {
         let children_state = self
             .children

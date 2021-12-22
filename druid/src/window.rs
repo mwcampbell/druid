@@ -31,11 +31,11 @@ use crate::debug_state::DebugState;
 use crate::menu::{MenuItemId, MenuManager};
 use crate::text::TextFieldRegistration;
 use crate::widget::LabelText;
-use crate::win_handler::RUN_COMMANDS_TOKEN;
+use crate::win_handler::{RUN_COMMANDS_TOKEN, UPDATE_ACCESSIBILITY_TOKEN};
 use crate::{
-    BoxConstraints, Data, Env, Event, EventCtx, ExtEventSink, Handled, InternalEvent,
-    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, Menu, PaintCtx, Point, Size, TimerToken,
-    UpdateCtx, Widget, WidgetId, WidgetPod,
+    AccessibilityCtx, BoxConstraints, Data, Env, Event, EventCtx, ExtEventSink, Handled,
+    InternalEvent, InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, Menu, PaintCtx, Point,
+    Size, TimerToken, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 
 pub type ImeUpdateFn = dyn FnOnce(crate::shell::text::Event);
@@ -447,6 +447,47 @@ impl<T: Data> Window<T> {
             );
         }
         self.paint(piet, invalid, queue, data, env);
+
+        if let Some(mut handle) = self.handle.get_idle_handle() {
+            handle.schedule_idle(UPDATE_ACCESSIBILITY_TOKEN);
+        } else {
+            error!("failed to get idle handle");
+        }
+    }
+
+    pub(crate) fn update_accessibility(&mut self, queue: &mut CommandQueue, data: &T, env: &Env) {
+        let widget_state = WidgetState::new(self.root.id(), Some(self.size));
+        let mut state = ContextState::new::<T>(
+            queue,
+            &self.ext_handle,
+            &self.handle,
+            self.id,
+            self.focus,
+            &mut self.timers,
+            &mut self.pending_text_registrations,
+        );
+        let mut update = accessibility_tree_update_skeleton(self.id);
+        let mut ctx = AccessibilityCtx {
+            state: &mut state,
+            widget_state: &widget_state,
+            nodes: &mut update.nodes,
+            node_index: 0,
+        };
+
+        let root = &mut self.root;
+        info_span!("update_accessibility").in_scope(|| {
+            root.accessibility(&mut ctx, data, env);
+        });
+
+        // TODO: Set focus to None if the window itself isn't focused,
+        // once we track that state.
+        update.focus = Some(accesskit::NodeId(
+            self.focus
+                .unwrap_or(WINDOW_ACCESSIBILITY_ID)
+                .to_nonzero_raw(),
+        ));
+
+        self.handle.update_accesskit(update);
     }
 
     fn layout(&mut self, queue: &mut CommandQueue, data: &T, env: &Env) {
@@ -701,5 +742,23 @@ impl WindowId {
     pub fn next() -> WindowId {
         static WINDOW_COUNTER: Counter = Counter::new();
         WindowId(WINDOW_COUNTER.next())
+    }
+}
+
+const WINDOW_ACCESSIBILITY_ID: WidgetId = WidgetId::reserved(65535);
+
+pub(crate) fn accessibility_tree_update_skeleton(id: WindowId) -> accesskit::TreeUpdate {
+    let root_id = accesskit::NodeId(WINDOW_ACCESSIBILITY_ID.to_nonzero_raw());
+    let tree_id = accesskit::TreeId(format!("druid{}", id.0).into());
+
+    accesskit::TreeUpdate {
+        clear: None,
+        nodes: vec![accesskit::Node::new(root_id, accesskit::Role::Window)],
+        tree: Some(accesskit::Tree::new(
+            tree_id,
+            root_id,
+            accesskit::StringEncoding::Utf8,
+        )),
+        focus: None,
     }
 }

@@ -132,7 +132,7 @@ pub use widget_wrapper::WidgetWrapper;
 pub mod prelude {
     #[doc(hidden)]
     pub use crate::{
-        BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-        RenderContext, Size, UpdateCtx, Widget, WidgetId,
+        AccessibilityCtx, BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, LifeCycle,
+        LifeCycleCtx, PaintCtx, RenderContext, Size, UpdateCtx, Widget, WidgetId,
     };
 }

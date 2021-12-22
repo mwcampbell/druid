@@ -30,7 +30,7 @@ use crate::app_delegate::{AppDelegate, DelegateCtx};
 use crate::core::CommandQueue;
 use crate::ext_event::{ExtEventHost, ExtEventSink};
 use crate::menu::{ContextMenu, MenuItemId, MenuManager};
-use crate::window::{ImeUpdateFn, Window};
+use crate::window::{accessibility_tree_update_skeleton, ImeUpdateFn, Window};
 use crate::{
     Command, Data, Env, Event, Handled, InternalEvent, KeyEvent, PlatformError, Selector, Target,
     TimerToken, WidgetId, WindowDesc, WindowId,
@@ -44,6 +44,8 @@ pub(crate) const RUN_COMMANDS_TOKEN: IdleToken = IdleToken::new(1);
 
 /// A token we are called back with if an external event was submitted.
 pub(crate) const EXT_EVENT_IDLE_TOKEN: IdleToken = IdleToken::new(2);
+
+pub(crate) const UPDATE_ACCESSIBILITY_TOKEN: IdleToken = IdleToken::new(3);
 
 /// The struct implements the druid-shell `WinHandler` trait.
 ///
@@ -347,6 +349,12 @@ impl<T: Data> InnerAppState<T> {
         }
     }
 
+    fn update_accessibility(&mut self, window_id: WindowId) {
+        if let Some(win) = self.windows.get_mut(window_id) {
+            win.update_accessibility(&mut self.command_queue, &self.data, &self.env);
+        }
+    }
+
     fn dispatch_cmd(&mut self, cmd: Command) -> Handled {
         let handled = self.delegate_cmd(&cmd);
         self.do_update();
@@ -598,7 +606,7 @@ impl<T: Data> AppState<T> {
         self.inner.borrow_mut().paint(window_id, piet, invalid);
     }
 
-    fn idle(&mut self, token: IdleToken) {
+    fn idle(&mut self, token: IdleToken, window_id: WindowId) {
         match token {
             RUN_COMMANDS_TOKEN => {
                 self.process_commands();
@@ -608,6 +616,9 @@ impl<T: Data> AppState<T> {
                 self.process_ext_events();
                 self.process_commands();
                 self.inner.borrow_mut().do_update();
+            }
+            UPDATE_ACCESSIBILITY_TOKEN => {
+                self.inner.borrow_mut().update_accessibility(window_id);
             }
             other => tracing::warn!("unexpected idle token {:?}", other),
         }
@@ -884,6 +895,12 @@ impl<T: Data> AppState<T> {
         let handler = DruidHandler::new_shared((*self).clone(), id);
         builder.set_handler(Box::new(handler));
 
+        // Start with an empty accessibility tree. Window::update_accessibility
+        // currently forces a tree update rather than lazily doing it only if
+        // the platform adapter has requested a tree. Revisit this later
+        // if we make Window::update_accessibility lazy.
+        builder.set_accesskit_factory(Box::new(move || accessibility_tree_update_skeleton(id)));
+
         self.add_window(id, pending);
         builder.build()
     }
@@ -985,7 +1002,7 @@ impl<T: Data> WinHandler for DruidHandler<T> {
     }
 
     fn idle(&mut self, token: IdleToken) {
-        self.app_state.idle(token);
+        self.app_state.idle(token, self.window_id);
     }
 
     fn as_any(&mut self) -> &mut dyn Any {

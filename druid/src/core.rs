@@ -24,9 +24,9 @@ use crate::contexts::ContextState;
 use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size, Vec2};
 use crate::sub_window::SubWindowUpdate;
 use crate::{
-    ArcStr, BoxConstraints, Color, Command, Cursor, Data, Env, Event, EventCtx, InternalEvent,
-    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, Notification, PaintCtx, Region,
-    RenderContext, Target, TextLayout, UpdateCtx, Widget, WidgetId, WindowId,
+    AccessibilityCtx, ArcStr, BoxConstraints, Color, Command, Cursor, Data, Env, Event, EventCtx,
+    InternalEvent, InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, Notification, PaintCtx,
+    Region, RenderContext, Target, TextLayout, UpdateCtx, Widget, WidgetId, WindowId,
 };
 
 /// Our queue type
@@ -1195,6 +1195,23 @@ impl<T: Data, W: Widget<T>> WidgetPod<T, W> {
 
         self.state.request_update = false;
         ctx.widget_state.merge_up(&mut self.state);
+    }
+
+    /// Populate the accessibility node for a child widget.
+    ///
+    /// Generally called by container widgets as part of their
+    /// [`Widget::accessibility`] method.
+    pub fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
+        ctx.with_child_ctx(|ctx| {
+            ctx.push_child_node(accesskit::Node {
+                // TODO: bounds
+                ..accesskit::Node::new(
+                    accesskit::NodeId(self.id().to_nonzero_raw()),
+                    accesskit::Role::Unknown,
+                )
+            });
+            self.inner.accessibility(ctx, data, env);
+        });
     }
 }
 

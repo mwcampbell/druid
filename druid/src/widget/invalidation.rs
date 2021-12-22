@@ -91,6 +91,15 @@ impl<T: Data, W: Widget<T>> Widget<T> for DebugInvalidation<T, W> {
         self.debug_color += 1;
     }
 
+    #[instrument(
+        name = "DebugInvalidation",
+        level = "trace",
+        skip(self, ctx, data, env)
+    )]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
+        self.child.accessibility(ctx, data, env);
+    }
+
     fn id(&self) -> Option<WidgetId> {
         self.child.id()
     }

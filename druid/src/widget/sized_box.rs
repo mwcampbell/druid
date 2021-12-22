@@ -188,6 +188,18 @@ impl<T: Data> Widget<T> for SizedBox<T> {
         }
     }
 
+    #[instrument(name = "SizedBox", level = "trace", skip(self, ctx, data, env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
+        if let Some(ref mut child) = self.child {
+            child.accessibility(ctx, data, env);
+        } else {
+            ctx.mutate_node(|node| {
+                node.role = accesskit::Role::GenericContainer;
+                node.ignored = true;
+            });
+        }
+    }
+
     fn id(&self) -> Option<WidgetId> {
         self.child.as_ref().and_then(|child| child.id())
     }

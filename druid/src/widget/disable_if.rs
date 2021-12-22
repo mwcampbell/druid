@@ -14,8 +14,8 @@
 
 use crate::debug_state::DebugState;
 use crate::{
-    BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, Size, UpdateCtx, Widget, WidgetPod,
+    AccessibilityCtx, BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, Point, Size, UpdateCtx, Widget, WidgetPod,
 };
 
 /// A widget wrapper which disables the child widget if the provided closure return true.
@@ -68,6 +68,14 @@ impl<T: Data, W: Widget<T>> Widget<T> for DisabledIf<T, W> {
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &T, env: &Env) {
         self.child.paint(ctx, data, env);
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::GenericContainer;
+            node.ignored = true;
+        });
+        self.child.accessibility(ctx, data, env);
     }
 
     fn debug_state(&self, data: &T) -> DebugState {

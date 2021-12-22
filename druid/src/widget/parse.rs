@@ -85,6 +85,11 @@ impl<T: FromStr + Display + Data, W: Widget<String>> Widget<Option<T>> for Parse
         self.widget.paint(ctx, &self.state, env)
     }
 
+    #[instrument(name = "Parse", level = "trace", skip(self, ctx, _data, env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, _data: &Option<T>, env: &Env) {
+        self.widget.accessibility(ctx, &self.state, env)
+    }
+
     fn id(&self) -> Option<WidgetId> {
         self.widget.id()
     }

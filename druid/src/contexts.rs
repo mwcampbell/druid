@@ -142,12 +142,21 @@ pub struct PaintCtx<'a, 'b, 'c> {
     pub(crate) depth: u32,
 }
 
+/// A context used to populate the accessibility nodes for widgets.
+pub struct AccessibilityCtx<'a, 'b> {
+    pub(crate) state: &'a mut ContextState<'b>,
+    pub(crate) widget_state: &'a WidgetState,
+    pub(crate) nodes: &'a mut Vec<accesskit::Node>,
+    pub(crate) node_index: usize,
+}
+
 // methods on everyone
 impl_context_method!(
     EventCtx<'_, '_>,
     UpdateCtx<'_, '_>,
     LifeCycleCtx<'_, '_>,
     PaintCtx<'_, '_, '_>,
+    AccessibilityCtx<'_, '_>,
     LayoutCtx<'_, '_>,
     {
         /// get the `WidgetId` of the current widget.
@@ -952,6 +961,38 @@ impl PaintCtx<'_, '_, '_> {
             paint_func: Box::new(paint_func),
             transform: current_transform,
         })
+    }
+}
+
+impl AccessibilityCtx<'_, '_> {
+    /// Mutate the current accessibility node in-place.
+    pub fn mutate_node(&mut self, f: impl FnOnce(&mut accesskit::Node)) {
+        let node = self.nodes.get_mut(self.node_index).unwrap();
+        f(node);
+    }
+
+    /// Append the specified node as a child of the current node, then set
+    /// the new child as the current node.
+    pub fn push_child_node(&mut self, node: accesskit::Node) {
+        self.mutate_node(|parent| {
+            parent.children.push(node.id);
+        });
+        self.nodes.push(node);
+        self.node_index = self.nodes.len() - 1;
+    }
+
+    /// Creates a temporary `AccessibilityCtx`, and calls the provided function
+    /// with that `AccessibilityCtx`. The new context starts out with the same
+    /// current node as this context, but its current node can be changed
+    /// independently.
+    pub fn with_child_ctx(&mut self, f: impl FnOnce(&mut AccessibilityCtx)) {
+        let mut child_ctx = AccessibilityCtx {
+            state: self.state,
+            widget_state: self.widget_state,
+            nodes: self.nodes,
+            node_index: self.node_index,
+        };
+        f(&mut child_ctx);
     }
 }
 

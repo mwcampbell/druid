@@ -412,6 +412,16 @@ impl<T: Data, W: Widget<T>> Widget<T> for ClipBox<T, W> {
         });
     }
 
+    #[instrument(name = "ClipBox", level = "trace", skip(self, ctx, data, env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::GenericContainer;
+            node.ignored = true;
+            node.clips_children = true;
+        });
+        self.child.accessibility(ctx, data, env);
+    }
+
     fn debug_state(&self, data: &T) -> DebugState {
         DebugState {
             display_name: self.short_type_name().to_string(),

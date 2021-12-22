@@ -185,6 +185,12 @@ pub trait Widget<T> {
     /// [`RenderContext`]: trait.RenderContext.html
     fn paint(&mut self, ctx: &mut PaintCtx, data: &T, env: &Env);
 
+    /// Populate the accessibility node for this widget.
+    // TODO: Drop the default implementation when we're ready to force
+    // all widgets to implement accessibility (pre-1.0).
+    #[allow(unused_variables)]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {}
+
     #[doc(hidden)]
     /// Get the identity of the widget; this is basically only implemented by
     /// `IdentityWrapper`. Widgets should not implement this on their own.
@@ -257,6 +263,10 @@ impl WidgetId {
     pub(crate) fn to_raw(self) -> u64 {
         self.0.into()
     }
+
+    pub(crate) fn to_nonzero_raw(self) -> NonZeroU64 {
+        self.0
+    }
 }
 
 impl<T> Widget<T> for Box<dyn Widget<T>> {
@@ -278,6 +288,10 @@ impl<T> Widget<T> for Box<dyn Widget<T>> {
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &T, env: &Env) {
         self.deref_mut().paint(ctx, data, env);
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
+        self.deref_mut().accessibility(ctx, data, env);
     }
 
     fn id(&self) -> Option<WidgetId> {

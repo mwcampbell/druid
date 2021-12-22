@@ -17,8 +17,8 @@
 use crate::debug_state::DebugState;
 
 use druid::{
-    BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, Size, UpdateCtx, Widget, WidgetExt, WidgetPod,
+    AccessibilityCtx, BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, Point, Size, UpdateCtx, Widget, WidgetExt, WidgetPod,
 };
 
 use druid::widget::SizedBox;
@@ -141,6 +141,18 @@ impl<T: Data> Widget<Option<T>> for Maybe<T> {
         match data.as_ref() {
             Some(d) => self.widget.with_some(|w| w.paint(ctx, d, env)),
             None => self.widget.with_none(|w| w.paint(ctx, &(), env)),
+        };
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &Option<T>, env: &Env) {
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::GenericContainer;
+            node.ignored = true;
+        });
+
+        match data.as_ref() {
+            Some(d) => self.widget.with_some(|w| w.accessibility(ctx, d, env)),
+            None => self.widget.with_none(|w| w.accessibility(ctx, &(), env)),
         };
     }
 

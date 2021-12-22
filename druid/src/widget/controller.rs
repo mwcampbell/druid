@@ -131,6 +131,10 @@ impl<T, W: Widget<T>, C: Controller<T, W>> Widget<T> for ControllerHost<W, C> {
         self.widget.paint(ctx, data, env)
     }
 
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
+        self.widget.accessibility(ctx, data, env)
+    }
+
     fn id(&self) -> Option<WidgetId> {
         self.widget.id()
     }

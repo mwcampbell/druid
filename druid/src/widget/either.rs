@@ -95,6 +95,15 @@ impl<T: Data> Widget<T> for Either<T> {
         self.current_widget().paint(ctx, data, env)
     }
 
+    #[instrument(name = "Either", level = "trace", skip(self, ctx, data, env), fields(branch = self.current))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::GenericContainer;
+            node.ignored = true;
+        });
+        self.current_widget().accessibility(ctx, data, env)
+    }
+
     fn debug_state(&self, data: &T) -> DebugState {
         let current_widget = if self.current {
             &self.true_branch

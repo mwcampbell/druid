@@ -135,6 +135,13 @@ where
         self.lens.with(data, |data| child.paint(ctx, data, env));
     }
 
+    #[instrument(name = "LensWrap", level = "trace", skip(self, ctx, data, env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
+        let child = &mut self.child;
+        self.lens
+            .with(data, |data| child.accessibility(ctx, data, env));
+    }
+
     fn id(&self) -> Option<WidgetId> {
         self.child.id()
     }

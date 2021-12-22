@@ -106,6 +106,18 @@ impl<T: Data, W: Widget<T>> Widget<T> for EnvScope<T, W> {
         self.child.paint(ctx, data, &new_env);
     }
 
+    #[instrument(name = "EnvScope", level = "trace", skip(self, ctx, data, env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
+        let mut new_env = env.clone();
+        (self.f)(&mut new_env, data);
+
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::GenericContainer;
+            node.ignored = true;
+        });
+        self.child.accessibility(ctx, data, &new_env);
+    }
+
     fn debug_state(&self, data: &T) -> DebugState {
         DebugState {
             display_name: self.short_type_name().to_string(),

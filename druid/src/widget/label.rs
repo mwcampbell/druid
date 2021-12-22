@@ -530,6 +530,14 @@ impl<T: Data> Widget<T> for Label<T> {
         self.label.paint(ctx, &self.current_text, env)
     }
 
+    #[instrument(name = "Label", level = "trace", skip(self, ctx, _data, _env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, _data: &T, _env: &Env) {
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::StaticText;
+            node.name = Some(self.text.display_text().deref().into());
+        });
+    }
+
     fn debug_state(&self, _data: &T) -> DebugState {
         DebugState {
             display_name: self.short_type_name().to_string(),
