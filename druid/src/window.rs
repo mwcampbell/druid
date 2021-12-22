@@ -22,7 +22,9 @@ use tracing::{error, info, info_span};
 use instant::Instant;
 
 use crate::piet::{Color, Piet, RenderContext};
-use crate::shell::{text::InputHandler, Counter, Cursor, Region, TextFieldToken, WindowHandle};
+use crate::shell::{
+    kurbo::Affine, text::InputHandler, Counter, Cursor, Region, Scale, TextFieldToken, WindowHandle,
+};
 
 use crate::app::{PendingWindow, WindowSizePolicy};
 use crate::contexts::ContextState;
@@ -466,7 +468,8 @@ impl<T: Data> Window<T> {
             &mut self.timers,
             &mut self.pending_text_registrations,
         );
-        let mut update = accessibility_tree_update_skeleton(self.id);
+        let mut update =
+            accessibility_tree_update_skeleton(self.id, Some(self.handle.get_scale().unwrap()));
         let mut ctx = AccessibilityCtx {
             state: &mut state,
             widget_state: &widget_state,
@@ -747,13 +750,19 @@ impl WindowId {
 
 const WINDOW_ACCESSIBILITY_ID: WidgetId = WidgetId::reserved(65535);
 
-pub(crate) fn accessibility_tree_update_skeleton(id: WindowId) -> accesskit::TreeUpdate {
+pub(crate) fn accessibility_tree_update_skeleton(
+    id: WindowId,
+    scale: Option<Scale>,
+) -> accesskit::TreeUpdate {
     let root_id = accesskit::NodeId(WINDOW_ACCESSIBILITY_ID.to_nonzero_raw());
     let tree_id = accesskit::TreeId(format!("druid{}", id.0).into());
 
     accesskit::TreeUpdate {
         clear: None,
-        nodes: vec![accesskit::Node::new(root_id, accesskit::Role::Window)],
+        nodes: vec![accesskit::Node {
+            transform: scale.map(|scale| Box::new(Affine::scale_non_uniform(scale.x(), scale.y()))),
+            ..accesskit::Node::new(root_id, accesskit::Role::Window)
+        }],
         tree: Some(accesskit::Tree::new(
             tree_id,
             root_id,

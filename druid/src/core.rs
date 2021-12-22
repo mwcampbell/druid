@@ -1204,7 +1204,10 @@ impl<T: Data, W: Widget<T>> WidgetPod<T, W> {
     pub fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
         ctx.with_child_ctx(|ctx| {
             ctx.push_child_node(accesskit::Node {
-                // TODO: bounds
+                bounds: Some(Rect::from_origin_size(
+                    self.state.origin + self.state.parent_window_origin.to_vec2(),
+                    self.state.size,
+                )),
                 ..accesskit::Node::new(
                     accesskit::NodeId(self.id().to_nonzero_raw()),
                     accesskit::Role::Unknown,
