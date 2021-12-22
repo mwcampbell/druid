@@ -66,7 +66,7 @@ unicode-segmentation = "1.6.0"
 xi-unicode = "0.3.0"
 fnv = "1.0.7"
 instant = { version = "0.1.6", features = ["wasm-bindgen"] }
-accesskit = "0.1.0"
+accesskit = "0.1.1"
 
 # Optional dependencies
 chrono = { version = "0.4.19", optional = true }
