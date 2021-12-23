@@ -75,6 +75,12 @@ impl<T: Data, W: Widget<T>> Controller<T, W> for Click<T> {
                     trace!("Widget {:?} released", ctx.widget_id());
                 }
             }
+            Event::AccessibilityAction {
+                action: accesskit::Action::Default,
+                data: None,
+            } => {
+                (self.action)(ctx, data, env);
+            }
             _ => {}
         }
 

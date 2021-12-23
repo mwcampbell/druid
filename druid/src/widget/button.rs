@@ -225,6 +225,7 @@ impl<T: Data> Widget<T> for Button<T> {
         self.label.accessibility(ctx, data, env);
         ctx.mutate_node(|node| {
             node.role = accesskit::Role::Button;
+            node.default_action_verb = Some(accesskit::DefaultActionVerb::Click);
         });
     }
 
