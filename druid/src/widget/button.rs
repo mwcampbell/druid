@@ -219,6 +219,15 @@ impl<T: Data> Widget<T> for Button<T> {
         });
     }
 
+    #[instrument(name = "Button", level = "trace", skip(self, ctx, data, env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
+        // Order is important, since Label also sets the role.
+        self.label.accessibility(ctx, data, env);
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::Button;
+        });
+    }
+
     fn debug_state(&self, _data: &T) -> DebugState {
         DebugState {
             display_name: self.short_type_name().to_string(),
