@@ -151,6 +151,13 @@ impl<T: Data> Widget<T> for Painter<T> {
     fn paint(&mut self, ctx: &mut PaintCtx, data: &T, env: &Env) {
         (self.0)(ctx, data, env)
     }
+    #[instrument(name = "Painter", level = "trace", skip(self, ctx, _data, _env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, _data: &T, _env: &Env) {
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::Presentation;
+            node.ignored = true;
+        });
+    }
 }
 
 impl<T> From<Color> for BackgroundBrush<T> {
