@@ -247,6 +247,12 @@ impl<T: Data, W: Widget<T>> Widget<T> for Scroll<T, W> {
             .draw_bars(ctx, &self.clip.viewport(), env);
     }
 
+    #[instrument(name = "Scroll", level = "trace", skip(self, ctx, data, env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
+        self.clip.accessibility(ctx, data, env);
+        // TODO: expose scrolling-related stuff, including the scroll bar(s)
+    }
+
     fn debug_state(&self, data: &T) -> DebugState {
         DebugState {
             display_name: self.short_type_name().to_string(),
