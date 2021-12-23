@@ -29,7 +29,7 @@ use crate::kurbo::{Point, Rect, Size};
 
 use crate::debug_state::DebugState;
 use crate::{
-    widget::Axis, BoxConstraints, Data, Env, Event, EventCtx, KeyOrValue, LayoutCtx, LifeCycle,
+    widget::Axis, AccessibilityCtx, BoxConstraints, Data, Env, Event, EventCtx, KeyOrValue, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, UpdateCtx, Widget, WidgetPod,
 };
 
@@ -428,6 +428,21 @@ impl<C: Data, T: ListIter<C>> Widget<T> for List<C> {
         data.for_each(|child_data, _| {
             if let Some(child) = children.next() {
                 child.paint(ctx, child_data, env);
+            }
+        });
+    }
+
+    #[instrument(name = "List", level = "trace", skip(self, ctx, data, env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::GenericContainer;
+            node.ignored = true;
+        });
+
+        let mut children = self.children.iter_mut();
+        data.for_each(|child_data, _| {
+            if let Some(child) = children.next() {
+                child.accessibility_child(ctx, child_data, env);
             }
         });
     }
