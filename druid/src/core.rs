@@ -701,6 +701,20 @@ impl<T: Data, W: Widget<T>> WidgetPod<T, W> {
                         _ => false,
                     }
                 }
+                InternalEvent::TargetedAccessibilityAction(request) => {
+                    let id = WidgetId::from_accesskit(request.target);
+                    if id == self.id() {
+                        modified_event = Some(Event::AccessibilityAction {
+                            action: request.action,
+                            data: request.data.clone(),
+                        });
+                        true
+                    } else {
+                        // Recurse when the target widget could be our descendant.
+                        // The bloom filter we're checking can return false positives.
+                        self.state.children.may_contain(&id)
+                    }
+                }
                 InternalEvent::RouteTimer(token, widget_id) => {
                     if *widget_id == self.id() {
                         modified_event = Some(Event::Timer(*token));
@@ -820,6 +834,7 @@ impl<T: Data, W: Widget<T>> WidgetPod<T, W> {
             Event::Timer(_) => false, // This event was targeted only to our parent
             Event::ImeStateChange => true, // once delivered to the focus widget, recurse to the component?
             Event::Command(_) => true,
+            Event::AccessibilityAction { .. } => true,
             Event::Notification(_) => false,
         };
 

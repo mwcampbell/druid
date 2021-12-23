@@ -267,6 +267,10 @@ impl WidgetId {
     pub(crate) fn to_nonzero_raw(self) -> NonZeroU64 {
         self.0
     }
+
+    pub(crate) fn from_accesskit(id: accesskit::NodeId) -> WidgetId {
+        WidgetId(id.0)
+    }
 }
 
 impl<T> Widget<T> for Box<dyn Widget<T>> {

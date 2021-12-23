@@ -158,6 +158,13 @@ pub enum Event {
     /// [`ExtEventSink`]: crate::ExtEventSink
     /// [`MenuItem`]: crate::MenuItem
     Command(Command),
+    /// An accessibility action to be handled by the widget.
+    AccessibilityAction {
+        /// The type of action requested.
+        action: accesskit::Action,
+        /// Data associated with the action.
+        data: Option<accesskit::ActionData>,
+    },
     /// A [`Notification`] from one of this widget's descendants.
     ///
     /// While handling events, widgets can submit notifications to be
@@ -209,6 +216,8 @@ pub enum InternalEvent {
     MouseLeave,
     /// A command still in the process of being dispatched.
     TargetedCommand(Command),
+    /// An accessibility action still in the process of being dispatched.
+    TargetedAccessibilityAction(accesskit::ActionRequest),
     /// Used for routing timer events.
     RouteTimer(TimerToken, WidgetId),
     /// Route an IME change event.
@@ -435,6 +444,7 @@ impl Event {
             | Event::Timer(_)
             | Event::AnimFrame(_)
             | Event::Command(_)
+            | Event::AccessibilityAction { .. }
             | Event::Notification(_)
             | Event::Internal(_) => true,
             Event::MouseDown(_)

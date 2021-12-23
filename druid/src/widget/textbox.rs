@@ -415,6 +415,12 @@ impl<T: TextStorage + EditableText> Widget<T> for TextBox<T> {
                     ctx.set_handled();
                 }
             }
+            Event::AccessibilityAction {
+                action: accesskit::Action::Focus,
+                data: None,
+            } => {
+                ctx.request_focus();
+            }
             Event::MouseDown(mouse) if self.text().can_write() => {
                 if !ctx.is_disabled() {
                     if !mouse.focus {

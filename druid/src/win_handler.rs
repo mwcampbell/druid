@@ -994,6 +994,11 @@ impl<T: Data> WinHandler for DruidHandler<T> {
         self.app_state.do_window_event(event, self.window_id);
     }
 
+    fn accesskit_action(&mut self, request: accesskit::ActionRequest) {
+        let event = Event::Internal(InternalEvent::TargetedAccessibilityAction(request));
+        self.app_state.do_window_event(event, self.window_id);
+    }
+
     fn got_focus(&mut self) {
         self.app_state.window_got_focus(self.window_id);
     }
