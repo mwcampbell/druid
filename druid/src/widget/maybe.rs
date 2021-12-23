@@ -151,12 +151,8 @@ impl<T: Data> Widget<Option<T>> for Maybe<T> {
         });
 
         match data.as_ref() {
-            Some(d) => self
-                .widget
-                .with_some(|w| w.accessibility_child(ctx, d, env)),
-            None => self
-                .widget
-                .with_none(|w| w.accessibility_child(ctx, &(), env)),
+            Some(d) => self.widget.with_some(|w| w.accessibility(ctx, d, env)),
+            None => self.widget.with_none(|w| w.accessibility(ctx, &(), env)),
         };
     }
 

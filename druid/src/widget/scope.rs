@@ -310,9 +310,7 @@ impl<SP: ScopePolicy, W: Widget<SP::State>> Widget<SP::In> for Scope<SP, W> {
 
     #[instrument(name = "Scope", level = "trace", skip(self, ctx, data, env))]
     fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &SP::In, env: &Env) {
-        self.with_state(data, |state, inner| {
-            inner.accessibility_modify(ctx, state, env)
-        });
+        self.with_state(data, |state, inner| inner.accessibility(ctx, state, env));
     }
 
     // TODO

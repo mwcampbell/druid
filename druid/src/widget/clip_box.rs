@@ -419,7 +419,7 @@ impl<T: Data, W: Widget<T>> Widget<T> for ClipBox<T, W> {
             node.ignored = true;
             node.clips_children = true;
         });
-        self.child.accessibility_child(ctx, data, env);
+        self.child.accessibility(ctx, data, env);
     }
 
     fn debug_state(&self, data: &T) -> DebugState {

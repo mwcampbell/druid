@@ -1197,22 +1197,11 @@ impl<T: Data, W: Widget<T>> WidgetPod<T, W> {
         ctx.widget_state.merge_up(&mut self.state);
     }
 
-    /// Add information from this widget to the current accessibility node.
-    /// The existing node ID is preserved.
+    /// Populate the accessibility node for a child widget.
     ///
     /// Generally called by container widgets as part of their
-    /// [`Widget::accessibility`] method, if the container modifies
-    /// a single inner widget (e.g. layout or decoration).
-    pub fn accessibility_modify(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
-        self.inner.accessibility(ctx, data, env);
-    }
-
-    /// Create and populate a child accessibility node for this widget.
-    ///
-    /// Generally called by container widgets as part of their
-    /// [`Widget::accessibility`] method, if the container does not
-    /// implement a straightforward modification to a single inner widget.
-    pub fn accessibility_child(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
+    /// [`Widget::accessibility`] method.
+    pub fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
         ctx.with_child_ctx(|ctx| {
             ctx.push_child_node(accesskit::Node {
                 bounds: Some(Rect::from_origin_size(

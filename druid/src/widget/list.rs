@@ -442,7 +442,7 @@ impl<C: Data, T: ListIter<C>> Widget<T> for List<C> {
         let mut children = self.children.iter_mut();
         data.for_each(|child_data, _| {
             if let Some(child) = children.next() {
-                child.accessibility_child(ctx, child_data, env);
+                child.accessibility(ctx, child_data, env);
             }
         });
     }

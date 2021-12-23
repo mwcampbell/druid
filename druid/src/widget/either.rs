@@ -101,7 +101,7 @@ impl<T: Data> Widget<T> for Either<T> {
             node.role = accesskit::Role::GenericContainer;
             node.ignored = true;
         });
-        self.current_widget().accessibility_child(ctx, data, env)
+        self.current_widget().accessibility(ctx, data, env)
     }
 
     fn debug_state(&self, data: &T) -> DebugState {

@@ -479,7 +479,7 @@ impl<T: Data> Window<T> {
 
         let root = &mut self.root;
         info_span!("update_accessibility").in_scope(|| {
-            root.accessibility_child(&mut ctx, data, env);
+            root.accessibility(&mut ctx, data, env);
         });
 
         // TODO: Set focus to None if the window itself isn't focused,

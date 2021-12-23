@@ -231,7 +231,11 @@ impl<T: Data> Widget<T> for Container<T> {
 
     #[instrument(name = "Container", level = "trace", skip(self, ctx, data, env))]
     fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
-        self.child.accessibility_modify(ctx, data, env);
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::GenericContainer;
+            node.ignored = true;
+        });
+        self.child.accessibility(ctx, data, env);
     }
 
     fn debug_state(&self, data: &T) -> DebugState {
