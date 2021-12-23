@@ -104,6 +104,13 @@ impl<T: Data> Widget<T> for Svg {
         ctx.clip(clip_rect);
         self.svg_data.to_piet(offset_matrix, ctx);
     }
+
+    #[instrument(name = "Svg", level = "trace", skip(self, ctx, _data, _env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, _data: &T, _env: &Env) {
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::Image;
+        });
+    }
 }
 
 /// Stored SVG data.

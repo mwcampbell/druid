@@ -251,6 +251,13 @@ impl<T: Data> Widget<T> for Image {
             }
         });
     }
+
+    #[instrument(name = "Image", level = "trace", skip(self, ctx, _data, _env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, _data: &T, _env: &Env) {
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::Image;
+        });
+    }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
