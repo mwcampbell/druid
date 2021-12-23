@@ -80,6 +80,7 @@ impl<T: Data, W: Widget<T>> Controller<T, W> for Click<T> {
                 data: None,
             } => {
                 (self.action)(ctx, data, env);
+                ctx.request_paint();
             }
             _ => {}
         }
