@@ -886,7 +886,7 @@ impl<T: Data> Widget<T> for Flex<T> {
         });
 
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
-            child.accessibility(ctx, data, env);
+            child.accessibility_child(ctx, data, env);
         }
     }
 

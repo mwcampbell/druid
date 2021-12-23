@@ -145,11 +145,7 @@ impl<T: Data> Widget<T> for Align<T> {
 
     #[instrument(name = "Align", level = "trace", skip(self, ctx, data, env))]
     fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
-        ctx.mutate_node(|node| {
-            node.role = accesskit::Role::GenericContainer;
-            node.ignored = true;
-        });
-        self.child.accessibility(ctx, data, env);
+        self.child.accessibility_modify(ctx, data, env);
     }
 
     fn debug_state(&self, data: &T) -> DebugState {

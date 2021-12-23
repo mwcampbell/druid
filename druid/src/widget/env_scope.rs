@@ -111,11 +111,7 @@ impl<T: Data, W: Widget<T>> Widget<T> for EnvScope<T, W> {
         let mut new_env = env.clone();
         (self.f)(&mut new_env, data);
 
-        ctx.mutate_node(|node| {
-            node.role = accesskit::Role::GenericContainer;
-            node.ignored = true;
-        });
-        self.child.accessibility(ctx, data, &new_env);
+        self.child.accessibility_modify(ctx, data, &new_env);
     }
 
     fn debug_state(&self, data: &T) -> DebugState {
