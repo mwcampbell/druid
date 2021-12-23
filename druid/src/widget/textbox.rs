@@ -679,6 +679,16 @@ impl<T: TextStorage + EditableText> Widget<T> for TextBox<T> {
         ctx.stroke(clip_rect, &border_color, border_width);
     }
 
+    #[instrument(name = "TextBox", level = "trace", skip(self, ctx, data, _env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, _env: &Env) {
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::TextField;
+            node.focusable = true;
+            node.editable = true;
+            node.value = data.slice(0..data.len()).map(|text| text.into());
+        });
+    }
+
     fn debug_state(&self, data: &T) -> DebugState {
         let text = data.slice(0..data.len()).unwrap_or_default();
         DebugState {
