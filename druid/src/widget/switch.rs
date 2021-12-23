@@ -165,6 +165,13 @@ impl Widget<bool> for Switch {
                     ctx.request_paint();
                 }
             }
+            Event::AccessibilityAction {
+                action: accesskit::Action::Default,
+                data: None,
+            } => {
+                *data = !*data;
+                ctx.request_paint();
+            }
             _ => (),
         }
     }
@@ -334,6 +341,20 @@ impl Widget<bool> for Switch {
 
         // paint on/off label
         self.paint_labels(ctx, env, switch_width);
+    }
+
+    #[instrument(name = "Switch", level = "trace", skip(self, ctx, data, _env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &bool, _env: &Env) {
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::Switch;
+            if *data {
+                node.checked_state = Some(accesskit::CheckedState::True);
+                node.default_action_verb = Some(accesskit::DefaultActionVerb::Uncheck);
+            } else {
+                node.checked_state = Some(accesskit::CheckedState::False);
+                node.default_action_verb = Some(accesskit::DefaultActionVerb::Check);
+            }
+        });
     }
 
     fn debug_state(&self, data: &bool) -> DebugState {
