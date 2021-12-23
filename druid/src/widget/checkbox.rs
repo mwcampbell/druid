@@ -38,6 +38,16 @@ impl Checkbox {
     pub fn set_text(&mut self, label: impl Into<LabelText<bool>>) {
         self.child_label.set_text(label);
     }
+
+    fn toggle(&mut self, ctx: &mut EventCtx, data: &mut bool) {
+        if *data {
+            *data = false;
+            trace!("Checkbox {:?} released - unchecked", ctx.widget_id());
+        } else {
+            *data = true;
+            trace!("Checkbox {:?} released - checked", ctx.widget_id());
+        }
+    }
 }
 
 impl Widget<bool> for Checkbox {
@@ -54,17 +64,18 @@ impl Widget<bool> for Checkbox {
             Event::MouseUp(_) => {
                 if ctx.is_active() && !ctx.is_disabled() {
                     if ctx.is_hot() {
-                        if *data {
-                            *data = false;
-                            trace!("Checkbox {:?} released - unchecked", ctx.widget_id());
-                        } else {
-                            *data = true;
-                            trace!("Checkbox {:?} released - checked", ctx.widget_id());
-                        }
+                        self.toggle(ctx, data);
                     }
                     ctx.request_paint();
                 }
                 ctx.set_active(false);
+            }
+            Event::AccessibilityAction {
+                action: accesskit::Action::Default,
+                data: None,
+            } => {
+                self.toggle(ctx, data);
+                ctx.request_paint();
             }
             _ => (),
         }
@@ -159,6 +170,22 @@ impl Widget<bool> for Checkbox {
 
         // Paint the text label
         self.child_label.draw_at(ctx, (size + x_padding, 0.0));
+    }
+
+    #[instrument(name = "CheckBox", level = "trace", skip(self, ctx, data, env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &bool, env: &Env) {
+        // Order is important, since Label also sets the role.
+        self.child_label.accessibility(ctx, data, env);
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::CheckBox;
+            if *data {
+                node.checked_state = Some(accesskit::CheckedState::True);
+                node.default_action_verb = Some(accesskit::DefaultActionVerb::Uncheck);
+            } else {
+                node.checked_state = Some(accesskit::CheckedState::False);
+                node.default_action_verb = Some(accesskit::DefaultActionVerb::Check);
+            }
+        });
     }
 
     fn debug_state(&self, data: &bool) -> DebugState {
