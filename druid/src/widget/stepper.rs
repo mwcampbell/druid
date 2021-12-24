@@ -199,6 +199,20 @@ impl Widget<f64> for Stepper {
         ctx.fill(arrows, &color);
     }
 
+    #[instrument(name = "Stepper", level = "trace", skip(self, ctx, data, _env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &f64, _env: &Env) {
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::Slider;
+            node.actions |= accesskit::Action::SetValue;
+            node.actions |= accesskit::Action::Increment;
+            node.actions |= accesskit::Action::Decrement;
+            node.numeric_value = Some(*data);
+            node.min_numeric_value = (self.min != std::f64::MIN).then(|| self.min);
+            node.max_numeric_value = (self.max != std::f64::MAX).then(|| self.max);
+            node.numeric_value_step = Some(self.step);
+        });
+    }
+
     #[instrument(
         name = "Stepper",
         level = "trace",
@@ -262,6 +276,27 @@ impl Widget<f64> for Stepper {
                 } else {
                     ctx.set_active(false);
                 }
+            }
+            Event::AccessibilityAction {
+                action: accesskit::Action::SetValue,
+                data: Some(accesskit::ActionData::NumericValue(value)),
+            } => {
+                *data = value.max(self.min).min(self.max);
+                ctx.request_paint();
+            }
+            Event::AccessibilityAction {
+                action: accesskit::Action::Increment,
+                data: None,
+            } => {
+                *data = (*data + self.step).min(self.max);
+                ctx.request_paint();
+            }
+            Event::AccessibilityAction {
+                action: accesskit::Action::Decrement,
+                data: None,
+            } => {
+                *data = (*data - self.step).max(self.min);
+                ctx.request_paint();
             }
             _ => (),
         }
