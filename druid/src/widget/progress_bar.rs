@@ -120,6 +120,18 @@ impl Widget<f64> for ProgressBar {
         ctx.fill(rounded_rect, &bar_gradient);
     }
 
+    #[instrument(name = "ProgressBar", level = "trace", skip(self, ctx, data, _env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &f64, _env: &Env) {
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::ProgressIndicator;
+            let clamped = data.max(0.0).min(1.0);
+            node.numeric_value = Some(clamped);
+            node.min_numeric_value = Some(0.0);
+            node.max_numeric_value = Some(1.0);
+            node.read_only = true;
+        });
+    }
+
     fn debug_state(&self, data: &f64) -> DebugState {
         DebugState {
             display_name: self.short_type_name().to_string(),
