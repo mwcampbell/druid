@@ -83,6 +83,13 @@ impl<T: Data + PartialEq> Widget<T> for Radio<T> {
                 }
                 ctx.set_active(false);
             }
+            Event::AccessibilityAction {
+                action: accesskit::Action::Default,
+                data: None,
+            } => {
+                *data = self.variant.clone();
+                ctx.request_paint();
+            }
             _ => (),
         }
     }
@@ -162,6 +169,21 @@ impl<T: Data + PartialEq> Widget<T> for Radio<T> {
 
         // Paint the text label
         self.child_label.draw_at(ctx, (size + x_padding, 0.0));
+    }
+
+    #[instrument(name = "Radio", level = "trace", skip(self, ctx, data, env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
+        // Order is important, since Label also sets the role.
+        self.child_label.accessibility(ctx, data, env);
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::RadioButton;
+            if *data == self.variant {
+                node.checked_state = Some(accesskit::CheckedState::True);
+            } else {
+                node.checked_state = Some(accesskit::CheckedState::False);
+            }
+            node.default_action_verb = Some(accesskit::DefaultActionVerb::Check);
+        });
     }
 
     fn debug_state(&self, data: &T) -> DebugState {
