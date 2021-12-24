@@ -123,6 +123,10 @@ impl Slider {
     fn normalize(&self, data: f64) -> f64 {
         (data.max(self.min).min(self.max) - self.min) / (self.max - self.min)
     }
+
+    fn accessibility_step(&self) -> f64 {
+        self.step.unwrap_or_else(|| (self.max - self.min) * 0.05)
+    }
 }
 
 impl Widget<f64> for Slider {
@@ -167,6 +171,27 @@ impl Widget<f64> for Slider {
                 } else {
                     ctx.set_active(false);
                 }
+            }
+            Event::AccessibilityAction {
+                action: accesskit::Action::SetValue,
+                data: Some(accesskit::ActionData::NumericValue(value)),
+            } => {
+                *data = value.max(self.min).min(self.max);
+                ctx.request_paint();
+            }
+            Event::AccessibilityAction {
+                action: accesskit::Action::Increment,
+                data: None,
+            } => {
+                *data = (*data + self.accessibility_step()).min(self.max);
+                ctx.request_paint();
+            }
+            Event::AccessibilityAction {
+                action: accesskit::Action::Decrement,
+                data: None,
+            } => {
+                *data = (*data - self.accessibility_step()).max(self.min);
+                ctx.request_paint();
             }
             _ => (),
         }
@@ -282,6 +307,21 @@ impl Widget<f64> for Slider {
 
         //Actually paint the knob
         ctx.fill(knob_circle, &knob_gradient);
+    }
+
+    #[instrument(name = "Slider", level = "trace", skip(self, ctx, data, _env))]
+    fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &f64, _env: &Env) {
+        ctx.mutate_node(|node| {
+            node.role = accesskit::Role::Slider;
+            node.actions |= accesskit::Action::SetValue;
+            node.actions |= accesskit::Action::Increment;
+            node.actions |= accesskit::Action::Decrement;
+            let clamped = data.max(self.min).min(self.max);
+            node.numeric_value = Some(clamped);
+            node.min_numeric_value = Some(self.min);
+            node.max_numeric_value = Some(self.max);
+            node.numeric_value_step = Some(self.accessibility_step());
+        });
     }
 
     fn debug_state(&self, data: &f64) -> DebugState {
