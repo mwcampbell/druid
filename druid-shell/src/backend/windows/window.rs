@@ -1560,13 +1560,8 @@ impl WindowBuilder {
                 // a window as soon as it's created, via the EVENT_OBJECT_CREATE
                 // WinEvent, meaning that we should initialize AccessKit
                 // while handling WM_CREATE and be prepared to handle WM_GETOBJECT
-                // immediately afterward. But druid-shell doesn't let us
-                // do this cleanly. First, as shown above, the window size
-                // may not be set until after the window is created.
-                // Second, druid-shell doesn't have a place to store data
-                // that is needed in the WM_CREATE handler but not afterward.
-                // In practice, it appears that assistive technologies don't
-                // send their first WM_GETOBJECT message until the window is
+                // immediately afterward. But in practice, assistive technologies
+                // don't send their first WM_GETOBJECT message until the window is
                 // shown, and druid-shell windows are always initially invisible.
                 // So it's safe to initialize AccessKit here.
                 let action_handler = Box::new(AccessKitActionHandler {
