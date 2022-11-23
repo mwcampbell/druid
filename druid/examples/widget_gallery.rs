@@ -391,7 +391,6 @@ impl<T: Data> Widget<T> for SquaresGrid<T> {
     fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
         ctx.mutate_node(|node| {
             node.role = accesskit::Role::GenericContainer;
-            node.ignored = true;
         });
 
         for widget in self.widgets.iter_mut().take(self.drawable_widgets) {

@@ -155,7 +155,6 @@ impl<T: Data> Widget<T> for Painter<T> {
     fn accessibility(&mut self, ctx: &mut AccessibilityCtx, _data: &T, _env: &Env) {
         ctx.mutate_node(|node| {
             node.role = accesskit::Role::Presentation;
-            node.ignored = true;
         });
     }
 }

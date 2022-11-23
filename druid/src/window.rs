@@ -468,8 +468,7 @@ impl<T: Data> Window<T> {
             &mut self.timers,
             &mut self.pending_text_registrations,
         );
-        let mut update =
-            accessibility_tree_update_skeleton(self.id, Some(self.handle.get_scale().unwrap()));
+        let mut update = accessibility_tree_update_skeleton(Some(self.handle.get_scale().unwrap()));
         let mut ctx = AccessibilityCtx {
             state: &mut state,
             widget_state: &widget_state,
@@ -487,7 +486,8 @@ impl<T: Data> Window<T> {
         update.focus = Some(accesskit::NodeId(
             self.focus
                 .unwrap_or(WINDOW_ACCESSIBILITY_ID)
-                .to_nonzero_raw(),
+                .to_nonzero_raw()
+                .into(),
         ));
 
         self.handle.update_accesskit(update);
@@ -750,24 +750,20 @@ impl WindowId {
 
 const WINDOW_ACCESSIBILITY_ID: WidgetId = WidgetId::reserved(65535);
 
-pub(crate) fn accessibility_tree_update_skeleton(
-    id: WindowId,
-    scale: Option<Scale>,
-) -> accesskit::TreeUpdate {
-    let root_id = accesskit::NodeId(WINDOW_ACCESSIBILITY_ID.to_nonzero_raw());
-    let tree_id = accesskit::TreeId(format!("druid{}", id.0).into());
+pub(crate) fn accessibility_tree_update_skeleton(scale: Option<Scale>) -> accesskit::TreeUpdate {
+    let root_id = accesskit::NodeId(WINDOW_ACCESSIBILITY_ID.to_nonzero_raw().into());
 
     accesskit::TreeUpdate {
-        clear: None,
-        nodes: vec![accesskit::Node {
-            transform: scale.map(|scale| Box::new(Affine::scale_non_uniform(scale.x(), scale.y()))),
-            ..accesskit::Node::new(root_id, accesskit::Role::Window)
-        }],
-        tree: Some(accesskit::Tree::new(
-            tree_id,
+        nodes: vec![(
             root_id,
-            accesskit::StringEncoding::Utf8,
-        )),
+            std::sync::Arc::new(accesskit::Node {
+                role: accesskit::Role::Window,
+                transform: scale
+                    .map(|scale| Box::new(Affine::scale_non_uniform(scale.x(), scale.y()))),
+                ..Default::default()
+            }),
+        )],
+        tree: Some(accesskit::Tree::new(root_id)),
         focus: None,
     }
 }

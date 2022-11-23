@@ -99,7 +99,6 @@ impl<T: Data> Widget<T> for Either<T> {
     fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
         ctx.mutate_node(|node| {
             node.role = accesskit::Role::GenericContainer;
-            node.ignored = true;
         });
         self.current_widget().accessibility(ctx, data, env)
     }

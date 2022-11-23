@@ -899,9 +899,7 @@ impl<T: Data> AppState<T> {
         // currently forces a tree update rather than lazily doing it only if
         // the platform adapter has requested a tree. Revisit this later
         // if we make Window::update_accessibility lazy.
-        builder.set_accesskit_factory(Box::new(move || {
-            accessibility_tree_update_skeleton(id, None)
-        }));
+        builder.set_accesskit_factory(Box::new(move || accessibility_tree_update_skeleton(None)));
 
         self.add_window(id, pending);
         builder.build()

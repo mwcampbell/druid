@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::convert::TryInto;
 use std::num::NonZeroU64;
 use std::ops::{Deref, DerefMut};
 
@@ -269,7 +270,7 @@ impl WidgetId {
     }
 
     pub(crate) fn from_accesskit(id: accesskit::NodeId) -> WidgetId {
-        WidgetId(id.0)
+        WidgetId(id.0.try_into().unwrap())
     }
 }
 

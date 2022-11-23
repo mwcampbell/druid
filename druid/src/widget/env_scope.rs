@@ -113,7 +113,6 @@ impl<T: Data, W: Widget<T>> Widget<T> for EnvScope<T, W> {
 
         ctx.mutate_node(|node| {
             node.role = accesskit::Role::GenericContainer;
-            node.ignored = true;
         });
         self.child.accessibility(ctx, data, &new_env);
     }

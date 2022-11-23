@@ -416,7 +416,6 @@ impl<T: Data, W: Widget<T>> Widget<T> for ClipBox<T, W> {
     fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
         ctx.mutate_node(|node| {
             node.role = accesskit::Role::GenericContainer;
-            node.ignored = true;
             node.clips_children = true;
         });
         self.child.accessibility(ctx, data, env);

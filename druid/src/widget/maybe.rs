@@ -147,7 +147,6 @@ impl<T: Data> Widget<Option<T>> for Maybe<T> {
     fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &Option<T>, env: &Env) {
         ctx.mutate_node(|node| {
             node.role = accesskit::Role::GenericContainer;
-            node.ignored = true;
         });
 
         match data.as_ref() {

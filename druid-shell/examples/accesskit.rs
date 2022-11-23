@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{any::Any, cell::RefCell, mem::drop, num::NonZeroU64, rc::Rc};
+use std::{any::Any, cell::RefCell, num::NonZeroU128, rc::Rc, sync::Arc};
 
-use accesskit::{
-    Action, ActionRequest, Node, NodeId, Role, StringEncoding, Tree, TreeId, TreeUpdate,
-};
+use accesskit::kurbo::Rect;
+use accesskit::{Action, ActionRequest, Node, NodeId, Role, Tree, TreeUpdate};
 
 use druid_shell::kurbo::Size;
 use druid_shell::piet::{Color, RenderContext};
@@ -27,17 +26,39 @@ const BG_COLOR: Color = Color::rgb8(0x27, 0x28, 0x22);
 
 const WINDOW_TITLE: &str = "Hello world";
 
-const WINDOW_ID: NodeId = NodeId(unsafe { NonZeroU64::new_unchecked(1) });
-const BUTTON_1_ID: NodeId = NodeId(unsafe { NonZeroU64::new_unchecked(2) });
-const BUTTON_2_ID: NodeId = NodeId(unsafe { NonZeroU64::new_unchecked(3) });
+const WINDOW_ID: NodeId = NodeId(unsafe { NonZeroU128::new_unchecked(1) });
+const BUTTON_1_ID: NodeId = NodeId(unsafe { NonZeroU128::new_unchecked(2) });
+const BUTTON_2_ID: NodeId = NodeId(unsafe { NonZeroU128::new_unchecked(3) });
 const INITIAL_FOCUS: NodeId = BUTTON_1_ID;
 
-fn make_button(id: NodeId, name: &str) -> Node {
-    Node {
+const BUTTON_1_RECT: Rect = Rect {
+    x0: 20.0,
+    y0: 20.0,
+    x1: 100.0,
+    y1: 60.0,
+};
+
+const BUTTON_2_RECT: Rect = Rect {
+    x0: 20.0,
+    y0: 60.0,
+    x1: 100.0,
+    y1: 100.0,
+};
+
+fn make_button(id: NodeId, name: &str) -> Arc<Node> {
+    let rect = match id {
+        BUTTON_1_ID => BUTTON_1_RECT,
+        BUTTON_2_ID => BUTTON_2_RECT,
+        _ => unreachable!(),
+    };
+
+    Arc::new(Node {
+        role: Role::Button,
+        bounds: Some(rect),
         name: Some(name.into()),
         focusable: true,
-        ..Node::new(id, Role::Button)
-    }
+        ..Default::default()
+    })
 }
 
 struct HelloState {
@@ -56,21 +77,21 @@ impl HelloState {
     }
 
     fn get_initial_tree(&self) -> TreeUpdate {
-        let root = Node {
+        let root = Arc::new(Node {
+            role: Role::Window,
             children: vec![BUTTON_1_ID, BUTTON_2_ID],
             name: Some(WINDOW_TITLE.into()),
-            ..Node::new(WINDOW_ID, Role::Window)
-        };
+            ..Default::default()
+        });
         let button_1 = make_button(BUTTON_1_ID, "Button 1");
         let button_2 = make_button(BUTTON_2_ID, "Button 2");
         TreeUpdate {
-            clear: None,
-            nodes: vec![root, button_1, button_2],
-            tree: Some(Tree::new(
-                TreeId("test".into()),
-                WINDOW_ID,
-                StringEncoding::Utf8,
-            )),
+            nodes: vec![
+                (WINDOW_ID, root),
+                (BUTTON_1_ID, button_1),
+                (BUTTON_2_ID, button_2),
+            ],
+            tree: Some(Tree::new(WINDOW_ID)),
             focus: self.is_window_focused.then(|| self.focus),
         }
     }
@@ -93,7 +114,6 @@ impl HelloHandler {
         let mut state = self.state.borrow_mut();
         state.is_window_focused = is_window_focused;
         self.handle.update_accesskit_if_active(|| TreeUpdate {
-            clear: None,
             nodes: vec![],
             tree: None,
             focus: is_window_focused.then(|| state.focus),
@@ -136,8 +156,7 @@ impl WinHandler for HelloHandler {
                 make_button(BUTTON_2_ID, "You pressed button 2")
             };
             let update = TreeUpdate {
-                clear: None,
-                nodes: vec![node],
+                nodes: vec![(focus, node)],
                 tree: None,
                 focus: Some(focus),
             };

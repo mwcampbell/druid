@@ -436,7 +436,6 @@ impl<C: Data, T: ListIter<C>> Widget<T> for List<C> {
     fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
         ctx.mutate_node(|node| {
             node.role = accesskit::Role::GenericContainer;
-            node.ignored = true;
         });
 
         let mut children = self.children.iter_mut();

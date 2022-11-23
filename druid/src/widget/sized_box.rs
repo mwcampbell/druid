@@ -195,7 +195,6 @@ impl<T: Data> Widget<T> for SizedBox<T> {
         } else {
             ctx.mutate_node(|node| {
                 node.role = accesskit::Role::GenericContainer;
-                node.ignored = true;
             });
         }
     }

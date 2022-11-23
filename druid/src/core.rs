@@ -1218,16 +1218,18 @@ impl<T: Data, W: Widget<T>> WidgetPod<T, W> {
     /// [`Widget::accessibility`] method.
     pub fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &T, env: &Env) {
         ctx.with_child_ctx(|ctx| {
-            ctx.push_child_node(accesskit::Node {
-                bounds: Some(Rect::from_origin_size(
-                    self.state.origin + self.state.parent_window_origin.to_vec2(),
-                    self.state.size,
-                )),
-                ..accesskit::Node::new(
-                    accesskit::NodeId(self.id().to_nonzero_raw()),
-                    accesskit::Role::Unknown,
-                )
-            });
+            let id = accesskit::NodeId(self.id().to_nonzero_raw().into());
+            ctx.push_child_node(
+                id,
+                accesskit::Node {
+                    role: accesskit::Role::Unknown,
+                    bounds: Some(Rect::from_origin_size(
+                        self.state.origin + self.state.parent_window_origin.to_vec2(),
+                        self.state.size,
+                    )),
+                    ..Default::default()
+                },
+            );
             self.inner.accessibility(ctx, data, env);
         });
     }

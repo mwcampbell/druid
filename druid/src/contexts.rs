@@ -19,6 +19,7 @@ use std::{
     collections::{HashMap, VecDeque},
     ops::{Deref, DerefMut},
     rc::Rc,
+    sync::Arc,
     time::Duration,
 };
 use tracing::{error, trace, warn};
@@ -146,7 +147,7 @@ pub struct PaintCtx<'a, 'b, 'c> {
 pub struct AccessibilityCtx<'a, 'b> {
     pub(crate) state: &'a mut ContextState<'b>,
     pub(crate) widget_state: &'a WidgetState,
-    pub(crate) nodes: &'a mut Vec<accesskit::Node>,
+    pub(crate) nodes: &'a mut Vec<(accesskit::NodeId, Arc<accesskit::Node>)>,
     pub(crate) node_index: usize,
 }
 
@@ -967,17 +968,17 @@ impl PaintCtx<'_, '_, '_> {
 impl AccessibilityCtx<'_, '_> {
     /// Mutate the current accessibility node in-place.
     pub fn mutate_node(&mut self, f: impl FnOnce(&mut accesskit::Node)) {
-        let node = self.nodes.get_mut(self.node_index).unwrap();
+        let node = Arc::get_mut(&mut self.nodes[self.node_index].1).unwrap();
         f(node);
     }
 
     /// Append the specified node as a child of the current node, then set
     /// the new child as the current node.
-    pub fn push_child_node(&mut self, node: accesskit::Node) {
+    pub fn push_child_node(&mut self, id: accesskit::NodeId, node: accesskit::Node) {
         self.mutate_node(|parent| {
-            parent.children.push(node.id);
+            parent.children.push(id);
         });
-        self.nodes.push(node);
+        self.nodes.push((id, Arc::new(node)));
         self.node_index = self.nodes.len() - 1;
     }
 
