@@ -245,6 +245,10 @@ impl WindowBuilder {
         self.menu = Some(menu);
     }
 
+    pub fn set_accesskit_factory(&mut self, _factory: Box<dyn FnOnce() -> accesskit::TreeUpdate>) {
+        // TODO
+    }
+
     pub fn build(self) -> Result<WindowHandle, Error> {
         assert_main_thread();
         unsafe {
@@ -1408,6 +1412,14 @@ impl WindowHandle {
     pub fn get_scale(&self) -> Result<Scale, Error> {
         // TODO: Get actual Scale
         Ok(Scale::new(1.0, 1.0))
+    }
+
+    pub fn update_accesskit(&self, _update: accesskit::TreeUpdate) {
+        // TODO
+    }
+
+    pub fn update_accesskit_if_active(&self, _updater: impl FnOnce() -> accesskit::TreeUpdate) {
+        // TODO
     }
 }
 
