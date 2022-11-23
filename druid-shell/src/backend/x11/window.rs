@@ -188,6 +188,10 @@ impl WindowBuilder {
         // TODO(x11/menus): implement WindowBuilder::set_menu (currently a no-op)
     }
 
+    pub fn set_accesskit_factory(&mut self, _factory: Box<dyn FnOnce() -> accesskit::TreeUpdate>) {
+        // TODO
+    }
+
     fn create_cairo_surface(
         &self,
         window_id: u32,
@@ -1817,6 +1821,14 @@ impl WindowHandle {
             error!("Window {} has already been dropped", self.id);
             Ok(Scale::new(1.0, 1.0))
         }
+    }
+
+    pub fn update_accesskit(&self, _update: accesskit::TreeUpdate) {
+        // TODO
+    }
+
+    pub fn update_accesskit_if_active(&self, _updater: impl FnOnce() -> accesskit::TreeUpdate) {
+        // TODO
     }
 }
 

@@ -405,6 +405,10 @@ impl WindowBuilder {
         self.menu = Some(menu);
     }
 
+    pub fn set_accesskit_factory(&mut self, _factory: Box<dyn FnOnce() -> accesskit::TreeUpdate>) {
+        // TODO
+    }
+
     pub fn build(self) -> Result<WindowHandle, Error> {
         let window = web_sys::window().ok_or(Error::NoWindow)?;
         let canvas = window
@@ -684,6 +688,14 @@ impl WindowHandle {
         if let Some(state) = self.0.upgrade() {
             state.canvas.set_title(&(title.into()))
         }
+    }
+
+    pub fn update_accesskit(&self, _update: accesskit::TreeUpdate) {
+        // TODO
+    }
+
+    pub fn update_accesskit_if_active(&self, _updater: impl FnOnce() -> accesskit::TreeUpdate) {
+        // TODO
     }
 }
 

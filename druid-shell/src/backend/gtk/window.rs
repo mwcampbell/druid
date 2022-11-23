@@ -280,6 +280,10 @@ impl WindowBuilder {
         self.menu = Some(menu);
     }
 
+    pub fn set_accesskit_factory(&mut self, _factory: Box<dyn FnOnce() -> accesskit::TreeUpdate>) {
+        // TODO
+    }
+
     pub fn build(self) -> Result<WindowHandle, ShellError> {
         let handler = self
             .handler
@@ -1262,6 +1266,14 @@ impl WindowHandle {
         if let Some(state) = self.state.upgrade() {
             state.window.set_title(&(title.into()));
         }
+    }
+
+    pub fn update_accesskit(&self, _update: accesskit::TreeUpdate) {
+        // TODO
+    }
+
+    pub fn update_accesskit_if_active(&self, _updater: impl FnOnce() -> accesskit::TreeUpdate) {
+        // TODO
     }
 }
 
