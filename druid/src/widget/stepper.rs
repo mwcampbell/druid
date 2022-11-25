@@ -202,7 +202,7 @@ impl Widget<f64> for Stepper {
     #[instrument(name = "Stepper", level = "trace", skip(self, ctx, data, _env))]
     fn accessibility(&mut self, ctx: &mut AccessibilityCtx, data: &f64, _env: &Env) {
         ctx.mutate_node(|node| {
-            node.role = accesskit::Role::Slider;
+            node.role = accesskit::Role::SpinButton;
             node.actions |= accesskit::Action::SetValue;
             node.actions |= accesskit::Action::Increment;
             node.actions |= accesskit::Action::Decrement;
