@@ -1283,8 +1283,8 @@ impl WndProc for MyWndProc {
                         .borrow()
                         .as_ref()
                         .map(|adapter| {
-                            let wparam = windows::Win32::Foundation::WPARAM(wparam);
-                            let lparam = windows::Win32::Foundation::LPARAM(lparam);
+                            let wparam = accesskit_windows::WPARAM(wparam);
+                            let lparam = accesskit_windows::LPARAM(lparam);
                             adapter.handle_wm_getobject(wparam, lparam)
                         })
                         .flatten()
@@ -1568,7 +1568,7 @@ impl WindowBuilder {
                     hwnd,
                     queue: win.idle_queue.clone(),
                 });
-                let hwnd = windows::Win32::Foundation::HWND(hwnd as _);
+                let hwnd = accesskit_windows::HWND(hwnd as _);
                 *win.accesskit.borrow_mut() = Some(accesskit_windows::Adapter::new(
                     hwnd,
                     factory,
