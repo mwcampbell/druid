@@ -1072,7 +1072,7 @@ extern "C" fn accessibility_hit_test(this: &mut Object, _: Sel, point: NSPoint) 
         accesskit.hit_test(point) as *mut _
     } else {
         let superclass = unsafe { msg_send![this, superclass] };
-        unsafe { msg_send![super(this, superclass), accessibilityHitTest:point] }
+        unsafe { msg_send![super(this, superclass), accessibilityHitTest: point] }
     }
 }
 
